@@ -1,38 +1,56 @@
-package io.github.game
+package com.mygame
 
+import com.badlogic.gdx.graphics.glutils.ShapeRenderer
 import com.badlogic.gdx.math.MathUtils
-import com.badlogic.gdx.math.Vector2
+import com.badlogic.gdx.Gdx
+import com.badlogic.gdx.Input
 
-// Simple math-based car physics (no Box2D)
 class Car {
-    val position = Vector2(0f, 0f)
-    var angle: Float = 0f // degrees
+    var x: Float = 0f
+    var y: Float = 0f
+    var angle: Float = 0f
     var speed: Float = 0f
 
-    private val maxSpeed = 400f
+    private val maxSpeed = 300f
     private val acceleration = 200f
-    private val friction = 150f
+    private val friction = 0.98f
+    private val turnSpeed = 2.5f
 
-    fun update(delta: Float, steer: Float, throttle: Float, speedLevel: Int) {
-        val effectiveMax = maxSpeed + speedLevel * 30f
+    fun update(dt: Float) {
+        // گاز
+        if (Gdx.input.isKeyPressed(Input.Keys.UP)) speed += acceleration * dt
+        // ترمز
+        if (Gdx.input.isKeyPressed(Input.Keys.DOWN)) speed -= acceleration * dt
 
-        // Throttle
-        speed += throttle * acceleration * delta
-        speed = MathUtils.clamp(speed, -effectiveMax * 0.5f, effectiveMax)
+        speed *= friction
+        speed = MathUtils.clamp(speed, -maxSpeed * 0.5f, maxSpeed)
 
-        // Friction when no throttle
-        if (throttle == 0f) {
-            if (speed > 0f) speed = maxOf(0f, speed - friction * delta)
-            else if (speed < 0f) speed = minOf(0f, speed + friction * delta)
-        }
+        // فرمان
+        if (Gdx.input.isKeyPressed(Input.Keys.LEFT)) angle += turnSpeed * dt
+        if (Gdx.input.isKeyPressed(Input.Keys.RIGHT)) angle -= turnSpeed * dt
 
-        // Steering only when moving
-        if (Math.abs(speed) > 10f) {
-            angle += steer * 90f * delta * (speed / effectiveMax)
-        }
+        x += MathUtils.sin(angle) * speed * dt
+        y += MathUtils.cos(angle) * speed * dt
+    }
 
-        // Move position
-        position.x += MathUtils.cosDeg(angle) * speed * delta
-        position.y += MathUtils.sinDeg(angle) * speed * delta
+    fun draw(shape: ShapeRenderer) {
+        shape.setColor(0.8f, 0.2f, 0.1f, 1f) // بدنه قرمز
+        shape.identity()
+        shape.translate(x, y, 0f)
+        shape.rotate(0f, 0f, 1f, angle * MathUtils.radiansToDegrees)
+
+        // بدنه
+        shape.rect(-20f, -12f, 40f, 24f)
+        // کابین (شیشه)
+        shape.setColor(0.4f, 0.7f, 0.9f, 1f)
+        shape.rect(-5f, -6f, 12f, 12f)
+        // چرخها
+        shape.setColor(0f, 0f, 0f, 1f)
+        shape.rect(-22f, -16f, 8f, 8f)
+        shape.rect(14f, -16f, 8f, 8f)
+        shape.rect(-22f, 8f, 8f, 8f)
+        shape.rect(14f, 8f, 8f, 8f)
+
+        shape.identity()
     }
 }
